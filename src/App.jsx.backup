@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 const PEER_GROUPS = ["Healthcare (Large)", "Healthcare (Small)", "Senior Living", "Peer Group"];
 
@@ -229,11 +229,11 @@ const SelectField = ({ label, options, value, onChange }) => {
   );
 };
 
-function WebsiteXRayVision() {
+export default function WebsiteXRayVision() {
   const [firms, setFirms] = useState({});
   const [selectedFirm, setSelectedFirm] = useState(null);
   const [activeTab, setActiveTab] = useState("structure");
-  const [view, setView] = useState("audit");
+  const [view, setView] = useState("audit"); // "audit" | "compare"
 
   useEffect(() => {
     const stored = localStorage.getItem("xray-firms");
@@ -701,5 +701,3 @@ function WebsiteXRayVision() {
     </div>
   );
 }
-
-export default WebsiteXRayVision;
