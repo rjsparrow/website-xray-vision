@@ -424,7 +424,7 @@ const TABS = [
   {id:"seo",label:"SEO & Traffic"},
 ];
 
-export default function WebsiteXRay() {
+export default function App() {
   const [firms,setFirms] = useState({});
   const [order,setOrder] = useState([]);
   const [sel,setSel] = useState(null);
