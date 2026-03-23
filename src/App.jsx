@@ -486,10 +486,7 @@ export default function App() {
 
   const importFirm = (data) => {
     const id = Date.now().toString();
-    // Spread data last so imported values take priority
-    const firm = {
-      // Defaults first
-      id,
+    const defaults = {
       name: data.name || "Imported Firm",
       url: data.url || "",
       peerGroup: data.peerGroup || "Peer Group",
@@ -498,24 +495,15 @@ export default function App() {
       keyTakeaway: data.keyTakeaway || "",
       thumbsRating: data.thumbsRating || "",
       changelog: {},
-      // Structure defaults
       sitemap:[],navStyles:[],headingFont:"",bodyFont:"",animations:[],modernity:"",mobile:"",speed:"",primaryColor:"",secondaryColor:"",accentColor:"",paletteNotes:"",photoStyles:[],visualIdNotes:"",structureNotes:"",
-      // Homepage defaults
       heroHeadline:"",heroSubtext:"",homepageSections:[],sectionOrder:"",toneTags:[],personality:"",readingNotes:"",geoSignals:[],geoRegions:"",clientSizeNotes:"",ctaInventory:"",homepageNotes:"",
-      // About defaults
       aboutUrl:"",aboutMissionVision:"",aboutStoryType:[],aboutYearFounded:"",aboutMarketsNamed:"",aboutAwardsCerts:"",aboutClientLogos:"",aboutOfficeDetail:"",aboutVideoMedia:"",aboutWordCount:"",aboutJargonDensity:"",aboutAiWritingCheck:"",aboutAudienceTarget:"",aboutCommunityConnection:"",aboutWarmthScale:"",aboutWeLanguage:"",aboutNotablePhrases:"",aboutNotes:"",
-      // People defaults
       peopleUrl:"",peopleHeadcount:"",peopleOrganization:"",peopleInfoPerPerson:"",peoplePhotoStyle:"",peopleCertifications:"",peopleProjectConnection:"",peopleCommunityInterests:"",peopleCultureContent:"",peopleApproachability:"",peopleBioDepth:"",peopleJargonDensity:"",peopleAiWritingCheck:"",peopleWarmthScale:"",peopleBioConsistency:"",peopleNotes:"",
-      // Portfolio defaults
       portfolioUrl:"",totalProjects:"",portfolioOrg:"",filterCategories:"",categoryCounts:"",portfolioFeatures:[],portfolioEmphasis:[],portfolioVideo:"",portfolioNotes:"",
       sampleProjectName:"",sampleProjectUrl:"",sampleWordCount:"",sampleParagraphs:"",sampleReadingLevel:"",narrativeIncludes:[],metadataFields:[],narrativeTone:[],narrativeAbsent:[],textAnalysisNotes:"",
-      // SEO defaults
       domainAuthority:"",monthlyTraffic:"",topTrafficSource:"",bounceRate:"",topKeywords:"",referralSources:"",pageTitle:"",metaDescription:"",seoNotes:"",
-      // Now spread imported data LAST so it overrides all defaults
-      ...data,
-      // Force our generated id
-      id: id,
     };
+    const firm = Object.assign({}, defaults, data, { id: id });
     setFirms(p=>{const next = {...p,[id]:firm}; sSet(SK,next); return next;});
     setOrder(p=>{const next = [...p,id]; sSet(SO,next); return next;});
     setImages(p=>({...p,[id]:{}}));
