@@ -537,6 +537,28 @@ export default function XRayVision({ competitors, onBack }) {
     {/* ═══ HEADER ═══ */}
     <div style={{background:"#2c2c2c",padding:"32px 32px 28px",color:"#f5f2ed"}}>
       <div style={{maxWidth:1100,margin:"0 auto"}}>
+        
+        {/* ADD HOME BUTTON HERE ↓ */}
+      <button
+        onClick={onBack}
+        style={{
+          background: "none",
+          border: "none",
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: 13,
+          color: "#b68d40",
+          cursor: "pointer",
+          marginBottom: 16,
+          padding: "0",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        ← Home
+      </button>
+      {/* END HOME BUTTON ↑ */}
+        
         <div style={{...m(),fontSize:11,textTransform:"uppercase",letterSpacing:2.5,color:AW,marginBottom:8}}>MKM Design Group</div>
         <h1 style={{...s(),fontSize:32,fontWeight:700,margin:0,lineHeight:1.2}}>Website X-Ray Vision</h1>
         <p style={{fontSize:14,color:"#a09a90",marginTop:8,marginBottom:0,maxWidth:600,lineHeight:1.5}}>Dissect competitor websites — structure, messaging, portfolio, and search visibility.</p>
