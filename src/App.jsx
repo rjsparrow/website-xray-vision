@@ -49,15 +49,19 @@ const FL = ({children}) => <div style={fldSt}>{children}</div>;
 const Chip = ({text,active,onClick}) => <button onClick={onClick} style={{...s(),fontSize:12,padding:"5px 14px",borderRadius:20,border:active?`1.5px solid ${A}`:`1.5px solid ${BD}`,background:active?A:"transparent",color:active?"#fff":"#5c5549",cursor:"pointer",fontWeight:active?600:400,transition:"all 0.15s ease",margin:"0 6px 6px 0"}}>{text}</button>;
 const ChipSet = ({items,selected=[],onChange}) => <div style={{display:"flex",flexWrap:"wrap",marginBottom:16}}>{items.map(i=><Chip key={i} text={i} active={selected.includes(i)} onClick={()=>{const c=[...selected];c.includes(i)?onChange(c.filter(x=>x!==i)):onChange([...c,i]);}}/>)}</div>;
 
+let _setPreview = null;
+
 const ImageSlot = ({image,onUpload,onDelete,label,height=180,contain=false}) => {
   const ref = useRef(null);
   const handle = (e) => { const f=e.target.files?.[0]; if(!f)return; const r=new FileReader(); r.onload=(ev)=>onUpload(ev.target.result); r.readAsDataURL(f); };
+  const imgHeight = height === null ? "auto" : height;
+  const imgFit = height === null ? "contain" : contain ? "contain" : "cover";
   return <div style={{marginBottom:12}}>
     <FL>{label}</FL>
     {image ? <div style={{position:"relative",borderRadius:8,overflow:"hidden",border:`1px solid ${BD}`,background:contain?"#f0ece6":"transparent"}}>
-      <img src={image} alt={label} style={{width:"100%",height,objectFit:contain?"contain":"cover",objectPosition:contain?"center":"top",display:"block",padding:contain?8:0,boxSizing:"border-box"}}/>
+      <img src={image} alt={label} onClick={()=>_setPreview&&_setPreview(image)} style={{width:"100%",height:imgHeight,objectFit:imgFit,objectPosition:contain?"center":"top",display:"block",padding:contain?8:0,boxSizing:"border-box",cursor:"pointer"}}/>
       <button onClick={onDelete} style={{position:"absolute",top:8,right:8,width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.6)",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-    </div> : <div onClick={()=>ref.current?.click()} style={{width:"100%",height,borderRadius:8,border:`2px dashed #d6d0c8`,background:S,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:M,...s(),fontSize:12,boxSizing:"border-box"}}>
+    </div> : <div onClick={()=>ref.current?.click()} style={{width:"100%",height:height||180,borderRadius:8,border:`2px dashed #d6d0c8`,background:S,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:M,...s(),fontSize:12,boxSizing:"border-box"}}>
       <div style={{fontSize:24,marginBottom:4,opacity:0.4}}>📷</div><div>Click to upload</div>
     </div>}
     <input ref={ref} type="file" accept="image/*" onChange={handle} style={{display:"none"}}/>
@@ -72,7 +76,7 @@ const TwoColLayout = ({children,screenshot,onScreenshot,onDelete,label}) => {
     <div style={{flex:"1 1 0",minWidth:200,position:"sticky",top:24}}>
       <FL>{label}</FL>
       {screenshot?<div style={{position:"relative",borderRadius:8,overflow:"hidden",border:`1px solid ${BD}`}}>
-        <img src={screenshot} alt={label} style={{width:"100%",display:"block",objectPosition:"top"}}/>
+        <img src={screenshot} alt={label} onClick={()=>_setPreview&&_setPreview(screenshot)} style={{width:"100%",display:"block",objectPosition:"top",cursor:"pointer"}}/>
         <button onClick={onDelete} style={{position:"absolute",top:8,right:8,width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.6)",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
       </div>:<div onClick={()=>ref.current?.click()} style={{width:"100%",minHeight:300,borderRadius:8,border:`2px dashed #d6d0c8`,background:S,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:M,...s(),fontSize:12}}>
         <div style={{fontSize:24,marginBottom:4,opacity:0.4}}>📷</div><div>Upload full page</div>
@@ -166,7 +170,7 @@ const TabHomepage = ({firm:d,onChange:o,images,onImg}) => <TwoColLayout screensh
     <SL>Hero Section</SL>
     <div style={{marginBottom:16}}><FL>Hero Headline</FL><input value={d.heroHeadline||""} onChange={e=>o("heroHeadline",e.target.value)} placeholder="Primary headline text..." style={inputSt}/></div>
     <div style={{marginBottom:16}}><FL>Hero Subtext / Tagline</FL><textarea value={d.heroSubtext||""} onChange={e=>o("heroSubtext",e.target.value)} placeholder="Supporting text..." style={{...txSt,minHeight:60}}/></div>
-    <ImageSlot image={images.hero} onUpload={img=>onImg("hero",img)} onDelete={()=>onImg("hero",null)} label="Hero Section Screenshot" height={200}/>
+    <ImageSlot image={images.hero} onUpload={img=>onImg("hero",img)} onDelete={()=>onImg("hero",null)} label="Hero Section Screenshot" height={null}/>
   </div>
   <div style={cardSt}>
     <SL>Homepage Sections Present</SL>
@@ -437,6 +441,8 @@ export default function App() {
   const [newName,setNewName] = useState("");
   const [newUrl,setNewUrl] = useState("");
   const [newGroup,setNewGroup] = useState(PEER_GROUPS[0]);
+  const [previewImg,setPreviewImg] = useState(null);
+  _setPreview = setPreviewImg;
 
   // Load
   useEffect(()=>{(async()=>{
@@ -601,7 +607,7 @@ export default function App() {
             <div style={{display:"flex",gap:24,alignItems:"flex-start"}}>
               {/* Logo - horizontal */}
               <div style={{width:160,flexShrink:0}}>
-                <ImageSlot image={curImgs.logo} onUpload={img=>updateImage("logo",img)} onDelete={()=>updateImage("logo",null)} label="Logo" height={60} contain={true}/>
+                <ImageSlot image={curImgs.logo} onUpload={img=>updateImage("logo",img)} onDelete={()=>updateImage("logo",null)} label="Logo" height={150} contain={true}/>
               </div>
               <div style={{flex:1}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
@@ -646,7 +652,7 @@ export default function App() {
           <div style={cardSt}>
             <SL>Full Homepage</SL>
             {curImgs.fullPage?<div style={{position:"relative",borderRadius:8,overflow:"hidden",border:`1px solid ${BD}`}}>
-              <img src={curImgs.fullPage} alt="Full homepage" style={{width:"100%",display:"block",objectPosition:"top"}}/>
+              <img src={curImgs.fullPage} alt="Full homepage" onClick={()=>setPreviewImg(curImgs.fullPage)} style={{width:"100%",display:"block",objectPosition:"top",cursor:"pointer"}}/>
               <button onClick={()=>updateImage("fullPage",null)} style={{position:"absolute",top:8,right:8,width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.6)",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
             </div>:<ImageSlot image={null} onUpload={img=>updateImage("fullPage",img)} onDelete={()=>{}} label="Upload Full Homepage Screenshot" height={200}/>}
           </div>
@@ -667,5 +673,9 @@ export default function App() {
         </div>}
       </>}
     </div>
+    {previewImg&&<div onClick={()=>setPreviewImg(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:24}}>
+      <img src={previewImg} alt="Preview" style={{maxWidth:"95%",maxHeight:"95vh",objectFit:"contain",borderRadius:8}}/>
+      <button onClick={()=>setPreviewImg(null)} style={{position:"absolute",top:20,right:20,width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,0.2)",color:"#fff",border:"none",cursor:"pointer",fontSize:24,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+    </div>}
   </div>;
 }
