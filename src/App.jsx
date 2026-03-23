@@ -428,9 +428,9 @@ const TABS = [
   {id:"seo",label:"SEO & Traffic"},
 ];
 
-export default function App() {
-  const [firms,setFirms] = useState({});
-  const [order,setOrder] = useState([]);
+export default function XRayVision({ competitors, onBack }) {
+  const firms = competitors || {};
+  const order = Object.keys(firms).sort((a,b) => firms[a].name.localeCompare(firms[b].name));
   const [sel,setSel] = useState(null);
   const [tab,setTab] = useState(null); // null = landing view
   const [view,setView] = useState("audit"); // audit|matrix|ab|import
