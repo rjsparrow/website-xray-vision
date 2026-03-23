@@ -514,7 +514,7 @@ export default function WebsiteXRay() {
       // Now spread imported data LAST so it overrides all defaults
       ...data,
       // Force our generated id
-      id,
+      id: id,
     };
     setFirms(p=>{const next = {...p,[id]:firm}; sSet(SK,next); return next;});
     setOrder(p=>{const next = [...p,id]; sSet(SO,next); return next;});
