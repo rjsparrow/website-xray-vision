@@ -1,17 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-// ─── THEME & STYLES ──────────────────────────────────────────────────
+// ─── THEME ───────────────────────────────────────────────────────────
 const A = "#5c6d5e", AW = "#b68d40", BG = "#e8e4dd", C = "#fff", BD = "#e8e4df", M = "#8a8278", D = "#1a1a1a", S = "#f5f2ed";
 const s = (x={}) => ({fontFamily:"'DM Sans',sans-serif",...x});
 const m = (x={}) => ({fontFamily:"'DM Mono',monospace",...x});
 
-const inputSt = {...s(),width:"100%",padding:"10px 12px",border:`1px solid #d6d0c8`,borderRadius:8,fontSize:13,color:D,background:C,outline:"none",boxSizing:"border-box"};
-const txSt = {...inputSt,minHeight:80,resize:"vertical",background:S};
-const cardSt = {background:C,borderRadius:12,border:`1px solid ${BD}`,padding:"24px 28px",marginBottom:20};
-const lblSt = {...m(),fontSize:12,textTransform:"uppercase",letterSpacing:1.8,color:M,marginBottom:10};
-const fldSt = {...s(),fontSize:12,fontWeight:600,color:"#5c5549",marginBottom:4};
-
-// ─── DATA OPTIONS ────────────────────────────────────────────────────
+// ─── CHIP OPTIONS ────────────────────────────────────────────────────
 const PEER_GROUPS = ["Healthcare (Large)","Healthcare (Small)","Senior Living","Peer Group"];
 const STATUS_OPTIONS = ["Not Started","In Progress","Complete"];
 const NAV_STYLES = ["Simple Dropdown","Mega Menu","Hamburger Only","Sticky Nav","Sidebar Nav","Hybrid"];
@@ -34,15 +28,21 @@ const ABOUT_STORY = ["Founding story","Mission-driven narrative","Growth / scale
 const JARGON = ["Low","Medium","High"];
 const WARMTH = ["Very Corporate","Somewhat Corporate","Neutral","Somewhat Warm","Very Warm"];
 
-// ─── STORAGE HELPERS ────────────────────────────────────────────────
+// ─── STORAGE ────────────────────────────────────────────────────────
 const SK = "xray-v5-firms", SO = "xray-v5-order";
 const sGet = (k) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } };
 const sSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) { console.error(e); } };
 const imgGet = (firmId, slot) => { try { return localStorage.getItem(`xray-img-${firmId}-${slot}`) || null; } catch { return null; } };
 const imgSet = (firmId, slot, data) => { try { if (data) { localStorage.setItem(`xray-img-${firmId}-${slot}`, data); } else { localStorage.removeItem(`xray-img-${firmId}-${slot}`); } } catch(e) { console.error(e); } };
-const IMG_SLOTS = ["logo","hero","fullPage","portfolio","aboutScreenshot","peopleScreenshot"];
+const IMG_SLOTS = ["logo","hero","fullPage","portfolio","aboutScreenshot","peopleScreenshot","hpExtra1","hpExtra2","hpExtra3","aboutExtra1","aboutExtra2","aboutExtra3","peopleExtra1","peopleExtra2","peopleExtra3","portExtra1","portExtra2","portExtra3"];
 
-// ─── UI COMPONENTS ───────────────────────────────────────────
+// ─── SHARED COMPONENTS ───────────────────────────────────────────────
+const inputSt = {...s(),width:"100%",padding:"10px 12px",border:`1px solid #d6d0c8`,borderRadius:8,fontSize:13,color:D,background:C,outline:"none",boxSizing:"border-box"};
+const txSt = {...inputSt,minHeight:80,resize:"vertical",background:S};
+const cardSt = {background:C,borderRadius:12,border:`1px solid ${BD}`,padding:"24px 28px",marginBottom:20};
+const lblSt = {...m(),fontSize:12,textTransform:"uppercase",letterSpacing:1.8,color:M,marginBottom:10};
+const fldSt = {...s(),fontSize:12,fontWeight:600,color:"#5c5549",marginBottom:4};
+
 const SL = ({children}) => <div style={lblSt}>{children}</div>;
 const FL = ({children}) => <div style={fldSt}>{children}</div>;
 const Chip = ({text,active,onClick}) => <button onClick={onClick} style={{...s(),fontSize:12,padding:"5px 14px",borderRadius:20,border:active?`1.5px solid ${A}`:`1.5px solid ${BD}`,background:active?A:"transparent",color:active?"#fff":"#5c5549",cursor:"pointer",fontWeight:active?600:400,transition:"all 0.15s ease",margin:"0 6px 6px 0"}}>{text}</button>;
@@ -53,10 +53,12 @@ let _setPreview = null;
 const ImageSlot = ({image,onUpload,onDelete,label,height=180,contain=false}) => {
   const ref = useRef(null);
   const handle = (e) => { const f=e.target.files?.[0]; if(!f)return; const r=new FileReader(); r.onload=(ev)=>onUpload(ev.target.result); r.readAsDataURL(f); };
+  const imgHeight = height === null ? "auto" : height;
+  const imgFit = height === null ? "contain" : contain ? "contain" : "cover";
   return <div style={{marginBottom:12}}>
     <FL>{label}</FL>
     {image ? <div style={{position:"relative",borderRadius:8,overflow:"hidden",border:`1px solid ${BD}`,background:contain?"#f0ece6":"transparent"}}>
-      <img src={image} alt={label} onClick={()=>_setPreview&&_setPreview(image)} style={{width:"100%",height:height||"auto",objectFit:contain?"contain":"cover",objectPosition:"top",display:"block",padding:contain?8:0,boxSizing:"border-box",cursor:"pointer"}}/>
+      <img src={image} alt={label} onClick={()=>_setPreview&&_setPreview(image)} style={{width:"100%",height:imgHeight,objectFit:imgFit,objectPosition:contain?"center":"top",display:"block",padding:contain?8:0,boxSizing:"border-box",cursor:"pointer"}}/>
       <button onClick={onDelete} style={{position:"absolute",top:8,right:8,width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.6)",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
     </div> : <div onClick={()=>ref.current?.click()} style={{width:"100%",height:height||180,borderRadius:8,border:`2px dashed #d6d0c8`,background:S,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:M,...s(),fontSize:12,boxSizing:"border-box"}}>
       <div style={{fontSize:24,marginBottom:4,opacity:0.4}}>📷</div><div>Click to upload</div>
@@ -65,9 +67,250 @@ const ImageSlot = ({image,onUpload,onDelete,label,height=180,contain=false}) => 
   </div>;
 };
 
-// ─── IMPORT COMPONENT ───────────────────────────────────────────
-const JSONImport = ({ onImport }) => {
-  const [json, setJson] = useState("");
+const TwoColLayout = ({children,screenshot,onScreenshot,onDelete,label}) => {
+  const ref = useRef(null);
+  const handle = (e) => { const f=e.target.files?.[0]; if(!f)return; const r=new FileReader(); r.onload=(ev)=>onScreenshot(ev.target.result); r.readAsDataURL(f); };
+  return <div style={{display:"flex",gap:24,alignItems:"flex-start"}}>
+    <div style={{flex:"2 1 0",minWidth:0}}>{children}</div>
+    <div style={{flex:"1 1 0",minWidth:200,position:"sticky",top:24}}>
+      <FL>{label}</FL>
+      {screenshot?<div style={{position:"relative",borderRadius:8,overflow:"hidden",border:`1px solid ${BD}`}}>
+        <img src={screenshot} alt={label} onClick={()=>_setPreview&&_setPreview(screenshot)} style={{width:"100%",display:"block",objectPosition:"top",cursor:"pointer"}}/>
+        <button onClick={onDelete} style={{position:"absolute",top:8,right:8,width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.6)",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+      </div>:<div onClick={()=>ref.current?.click()} style={{width:"100%",minHeight:300,borderRadius:8,border:`2px dashed #d6d0c8`,background:S,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:M,...s(),fontSize:12}}>
+        <div style={{fontSize:24,marginBottom:4,opacity:0.4}}>📷</div><div>Upload full page</div>
+      </div>}
+      <input ref={ref} type="file" accept="image/*" onChange={handle} style={{display:"none"}}/>
+    </div>
+  </div>;
+};
+
+const ExtraScreenshots = ({prefix,images,onImg}) => <div style={cardSt}>
+  <SL>Additional Screenshots (Optional)</SL>
+  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+    {[1,2,3].map(n=><ImageSlot key={n} image={images[`${prefix}Extra${n}`]} onUpload={img=>onImg(`${prefix}Extra${n}`,img)} onDelete={()=>onImg(`${prefix}Extra${n}`,null)} label={`Detail ${n}`} height={120}/>)}
+  </div>
+</div>;
+
+// ─── TAB COMPONENTS ──────────────────────────────────────────────────
+const TabStructure = ({firm:d,onChange:o}) => (
+  <div>
+    <div style={cardSt}>
+      <SL>Visual Design & Technical Quality</SL>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+        <div><FL>Heading Font</FL><input value={d.headingFont||""} onChange={e=>o("headingFont",e.target.value)} placeholder="e.g., Playfair Display" style={inputSt}/></div>
+        <div><FL>Body Font</FL><input value={d.bodyFont||""} onChange={e=>o("bodyFont",e.target.value)} placeholder="e.g., Open Sans" style={inputSt}/></div>
+      </div>
+      <FL>Animation & Motion</FL>
+      <ChipSet items={ANIMATION_FEATURES} selected={d.animations||[]} onChange={v=>o("animations",v)}/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:16}}>
+        {[["Modernity","modernity",MODERNITY],["Mobile Friendly","mobile",MOBILE],["Load Speed","speed",SPEED]].map(([l,k,opts])=><div key={k}><FL>{l}</FL><select value={d[k]||""} onChange={e=>o(k,e.target.value)} style={{...inputSt,cursor:"pointer"}}><option value="">Select...</option>{opts.map(x=><option key={x} value={x}>{x}</option>)}</select></div>)}
+      </div>
+      <FL>Palette Notes</FL>
+      <textarea value={d.paletteNotes||""} onChange={e=>o("paletteNotes",e.target.value)} placeholder="Overall color impression..." style={{...txSt,minHeight:60}}/>
+    </div>
+  </div>
+);
+
+const TabHomepage = ({firm:d,onChange:o,images,onImg}) => (
+  <TwoColLayout screenshot={images.fullPage} onScreenshot={img=>onImg("fullPage",img)} onDelete={()=>onImg("fullPage",null)} label="Full Homepage">
+    <div style={cardSt}>
+      <SL>Hero Section</SL>
+      <FL>Hero Headline</FL><input value={d.heroHeadline||""} onChange={e=>o("heroHeadline",e.target.value)} style={inputSt}/>
+      <FL>Hero Subtext</FL><textarea value={d.heroSubtext||""} onChange={e=>o("heroSubtext",e.target.value)} style={txSt}/>
+    </div>
+    <div style={cardSt}>
+      <SL>Homepage Sections</SL>
+      <ChipSet items={HP_SECTIONS} selected={d.homepageSections||[]} onChange={v=>o("homepageSections",v)}/>
+    </div>
+  </TwoColLayout>
+);
+
+const TabAbout = ({firm:d,onChange:o}) => (
+  <div style={cardSt}>
+    <SL>Mission & Story</SL>
+    <FL>Mission Statement</FL><textarea value={d.aboutMissionVision||""} onChange={e=>o("aboutMissionVision",e.target.value)} style={txSt}/>
+    <FL>Story Focus</FL><ChipSet items={ABOUT_STORY} selected={d.aboutStoryType||[]} onChange={v=>o("aboutStoryType",v)}/>
+  </div>
+);
+
+const TabPeople = ({firm:d,onChange:o}) => (
+  <div style={cardSt}>
+    <SL>Team Presentation</SL>
+    <FL>Total Headcount</FL><input value={d.peopleHeadcount||""} onChange={e=>o("peopleHeadcount",e.target.value)} style={inputSt}/>
+    <FL>Bio Warmth</FL><select value={d.peopleWarmthScale||""} onChange={e=>o("peopleWarmthScale",e.target.value)} style={inputSt}><option value="">Select...</option>{WARMTH.map(x=><option key={x} value={x}>{x}</option>)}</select>
+  </div>
+);
+
+const TabPortfolio = ({firm:d,onChange:o}) => (
+  <div style={cardSt}>
+    <SL>Project Showcase</SL>
+    <FL>Total Projects</FL><input value={d.totalProjects||""} onChange={e=>o("totalProjects",e.target.value)} style={inputSt}/>
+    <FL>Portfolio Emphasis</FL><ChipSet items={PORT_EMPHASIS} selected={d.portfolioEmphasis||[]} onChange={v=>o("portfolioEmphasis",v)}/>
+  </div>
+);
+
+const TabSEO = ({firm:d,onChange:o}) => (
+  <div style={cardSt}>
+    <SL>SEO & Traffic</SL>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+      <div><FL>DA</FL><input value={d.domainAuthority||""} onChange={e=>o("domainAuthority",e.target.value)} style={inputSt}/></div>
+      <div><FL>Traffic</FL><input value={d.monthlyTraffic||""} onChange={e=>o("monthlyTraffic",e.target.value)} style={inputSt}/></div>
+    </div>
+  </div>
+);
+
+// ─── JSON IMPORT ─────────────────────────────────────────────────────
+const JSONImport = ({onImport}) => {
+  const [json,setJson] = useState("");
+  const [err,setErr] = useState("");
+  const doImport = () => {
+    try { const d = JSON.parse(json); if(!d.name){setErr("JSON must have a 'name' field");return;} setErr(""); onImport(d); setJson(""); } catch(e) { setErr("Invalid JSON format."); }
+  };
+  return <div style={cardSt}>
+    <SL>Import Firm JSON</SL>
+    <textarea value={json} onChange={e=>setJson(e.target.value)} placeholder='Paste AI Research JSON here...' style={{...txSt, minHeight: 300, fontFamily: "monospace"}}/>
+    {err && <div style={{color: "red", fontSize: 12, marginTop: 10}}>{err}</div>}
+    <button onClick={doImport} style={{marginTop: 15, padding: "12px 24px", background: A, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer"}}>Import</button>
+  </div>;
+};
+
+// ─── MAIN APP ────────────────────────────────────────────────────────
+const TABS = [
+  {id:"structure",label:"Structure & UX"},
+  {id:"homepage",label:"Homepage"},
+  {id:"about",label:"About"},
+  {id:"people",label:"People"},
+  {id:"portfolio",label:"Portfolio"},
+  {id:"seo",label:"SEO"},
+];
+
+export default function App() {
+  const [firms, setFirms] = useState({});
+  const [order, setOrder] = useState([]);
+  const [sel, setSel] = useState(null);
+  const [tab, setTab] = useState(null);
+  const [view, setView] = useState("audit");
+  const [loaded, setLoaded] = useState(false);
+  const [images, setImages] = useState({});
+  const [newName, setNewName] = useState("");
+  const [previewImg, setPreviewImg] = useState(null);
+  _setPreview = setPreviewImg;
+
+  useEffect(() => {
+    const d = sGet(SK) || {};
+    const o = sGet(SO) || [];
+    setFirms(d); setOrder(o);
+    const imgs = {};
+    o.forEach(id => {
+      imgs[id] = {};
+      IMG_SLOTS.forEach(slot => {
+        const img = imgGet(id, slot);
+        if (img) imgs[id][slot] = img;
+      });
+    });
+    setImages(imgs);
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => { if (loaded) sSet(SK, firms); }, [firms, loaded]);
+  useEffect(() => { if (loaded) sSet(SO, order); }, [order, loaded]);
+
+  const updateFirm = useCallback((key, value) => {
+    if (!sel) return;
+    setFirms(p => ({ ...p, [sel]: { ...p[sel], [key]: value, lastReviewed: new Date().toISOString().split("T")[0] } }));
+  }, [sel]);
+
+  const updateImage = useCallback((slot, data) => {
+    if (!sel) return;
+    imgSet(sel, slot, data);
+    setImages(p => ({ ...p, [sel]: { ...(p[sel] || {}), [slot]: data } }));
+  }, [sel]);
+
+  const addFirm = () => {
+    if (!newName.trim()) return;
+    const id = Date.now().toString();
+    setFirms(p => ({ ...p, [id]: { id, name: newName.trim(), status: "Not Started" } }));
+    setOrder(p => [...p, id]);
+    setSel(id);
+    setNewName("");
+  };
+
+  const importFirm = (data) => {
+    const id = Date.now().toString();
+    setFirms(p => ({ ...p, [id]: { ...data, id } }));
+    setOrder(p => [...p, id]);
+    setSel(id);
+    setView("audit");
+  };
+
+  const exportFirm = () => {
+    navigator.clipboard.writeText(JSON.stringify(firms[sel], null, 2));
+    alert("JSON Copied!");
+  };
+
+  if (!loaded) return <div style={{...s(), padding: 50, textAlign: "center"}}>Loading...</div>;
+
+  const cur = sel ? firms[sel] : null;
+
+  return (
+    <div style={{...s(), background: BG, minHeight: "100vh", color: D}}>
+      <div style={{background: "#2c2c2c", padding: "32px", color: "#f5f2ed"}}>
+        <div style={{maxWidth: 1100, margin: "0 auto"}}>
+          <h1 style={{margin: 0}}>Website X-Ray Vision</h1>
+          <div style={{display: "flex", gap: 10, marginTop: 20}}>
+            <button onClick={() => setView("audit")} style={{background: "none", border: "none", color: view === "audit" ? AW : "#7a756d", cursor: "pointer", fontWeight: 600}}>Audit</button>
+            <button onClick={() => setView("import")} style={{background: "none", border: "none", color: view === "import" ? AW : "#7a756d", cursor: "pointer", fontWeight: 600}}>Import</button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{maxWidth: 1100, margin: "0 auto", padding: "24px 32px"}}>
+        {view === "import" ? <JSONImport onImport={importFirm} /> : sel ? (
+          <div>
+            <div style={{display: "flex", justifyContent: "space-between", marginBottom: 20}}>
+              <button onClick={() => {setSel(null); setTab(null);}} style={{background: "none", border: "none", color: A, cursor: "pointer", fontWeight: 600}}>← Back</button>
+              <button onClick={exportFirm} style={{padding: "6px 12px", borderRadius: 6, border: `1px solid ${BD}`, cursor: "pointer"}}>Export JSON</button>
+            </div>
+            <div style={cardSt}>
+              <h2>{cur.name}</h2>
+              <ImageSlot image={images[sel]?.logo} onUpload={img => updateImage("logo", img)} onDelete={() => updateImage("logo", null)} label="Logo" height={100} contain />
+            </div>
+            <div style={{display: "flex", gap: 20, marginBottom: 20, borderBottom: `1px solid ${BD}`}}>
+              {TABS.map(t => (
+                <button key={t.id} onClick={() => setTab(t.id)} style={{padding: "10px 0", background: "none", border: "none", borderBottom: tab === t.id ? `2px solid ${A}` : "none", color: tab === t.id ? D : M, cursor: "pointer", fontWeight: 600}}>{t.label}</button>
+              ))}
+            </div>
+            {tab === "structure" && <TabStructure firm={cur} onChange={updateFirm} />}
+            {tab === "homepage" && <TabHomepage firm={cur} onChange={updateFirm} images={images[sel]||{}} onImg={updateImage} />}
+            {tab === "about" && <TabAbout firm={cur} onChange={updateFirm} />}
+            {tab === "people" && <TabPeople firm={cur} onChange={updateFirm} />}
+            {tab === "portfolio" && <TabPortfolio firm={cur} onChange={updateFirm} />}
+            {tab === "seo" && <TabSEO firm={cur} onChange={updateFirm} />}
+          </div>
+        ) : (
+          <div style={cardSt}>
+            <SL>Firms</SL>
+            <div style={{display: "flex", gap: 10, marginBottom: 20}}>
+              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="New Firm Name" style={inputSt} />
+              <button onClick={addFirm} style={{padding: "0 20px", background: A, color: "#fff", border: "none", borderRadius: 8}}>Add</button>
+            </div>
+            {order.map(id => (
+              <div key={id} onClick={() => setSel(id)} style={{padding: 15, borderBottom: `1px solid ${BD}`, cursor: "pointer", display: "flex", justifyContent: "space-between"}}>
+                <span style={{fontWeight: 600}}>{firms[id].name}</span>
+                <span style={{color: M, fontSize: 12}}>{firms[id].status}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {previewImg && <div onClick={() => setPreviewImg(null)} style={{position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer"}}>
+        <img src={previewImg} style={{maxWidth: "90%", maxHeight: "90%"}} />
+      </div>}
+    </div>
+  );
+}  const [json, setJson] = useState("");
   const [err, setErr] = useState("");
   const handleImport = () => {
     try {
