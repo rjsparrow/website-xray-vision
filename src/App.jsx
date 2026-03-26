@@ -40,9 +40,9 @@ const sGet = (k) => { try { const v = localStorage.getItem(k); return v ? JSON.p
 const sSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) { console.error(e); } };
 const imgGet = (firmId, slot) => { try { return localStorage.getItem(`xray-img-${firmId}-${slot}`) || null; } catch { return null; } };
 const imgSet = (firmId, slot, data) => { try { if (data) { localStorage.setItem(`xray-img-${firmId}-${slot}`, data); } else { localStorage.removeItem(`xray-img-${firmId}-${slot}`); } } catch(e) { console.error(e); } };
-const IMG_SLOTS = ["logo","hero","fullPage","portfolio","aboutScreenshot","peopleScreenshot","hpExtra1","hpExtra2","hpExtra3","aboutExtra1","aboutExtra2","aboutExtra3","peopleExtra1","peopleExtra2","peopleExtra3","portExtra1","portExtra2","portExtra3"];
+const IMG_SLOTS = ["logo","hero","fullPage","portfolio","aboutScreenshot","peopleScreenshot"];
 
-// ─── SHARED UI COMPONENTS ───────────────────────────────────────────
+// ─── UI COMPONENTS ───────────────────────────────────────────
 const SL = ({children}) => <div style={lblSt}>{children}</div>;
 const FL = ({children}) => <div style={fldSt}>{children}</div>;
 const Chip = ({text,active,onClick}) => <button onClick={onClick} style={{...s(),fontSize:12,padding:"5px 14px",borderRadius:20,border:active?`1.5px solid ${A}`:`1.5px solid ${BD}`,background:active?A:"transparent",color:active?"#fff":"#5c5549",cursor:"pointer",fontWeight:active?600:400,transition:"all 0.15s ease",margin:"0 6px 6px 0"}}>{text}</button>;
@@ -53,12 +53,10 @@ let _setPreview = null;
 const ImageSlot = ({image,onUpload,onDelete,label,height=180,contain=false}) => {
   const ref = useRef(null);
   const handle = (e) => { const f=e.target.files?.[0]; if(!f)return; const r=new FileReader(); r.onload=(ev)=>onUpload(ev.target.result); r.readAsDataURL(f); };
-  const imgHeight = height === null ? "auto" : height;
-  const imgFit = height === null ? "contain" : contain ? "contain" : "cover";
   return <div style={{marginBottom:12}}>
     <FL>{label}</FL>
     {image ? <div style={{position:"relative",borderRadius:8,overflow:"hidden",border:`1px solid ${BD}`,background:contain?"#f0ece6":"transparent"}}>
-      <img src={image} alt={label} onClick={()=>_setPreview&&_setPreview(image)} style={{width:"100%",height:imgHeight,objectFit:imgFit,objectPosition:contain?"center":"top",display:"block",padding:contain?8:0,boxSizing:"border-box",cursor:"pointer"}}/>
+      <img src={image} alt={label} onClick={()=>_setPreview&&_setPreview(image)} style={{width:"100%",height:height||"auto",objectFit:contain?"contain":"cover",objectPosition:"top",display:"block",padding:contain?8:0,boxSizing:"border-box",cursor:"pointer"}}/>
       <button onClick={onDelete} style={{position:"absolute",top:8,right:8,width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,0.6)",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
     </div> : <div onClick={()=>ref.current?.click()} style={{width:"100%",height:height||180,borderRadius:8,border:`2px dashed #d6d0c8`,background:S,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:M,...s(),fontSize:12,boxSizing:"border-box"}}>
       <div style={{fontSize:24,marginBottom:4,opacity:0.4}}>📷</div><div>Click to upload</div>
@@ -67,7 +65,189 @@ const ImageSlot = ({image,onUpload,onDelete,label,height=180,contain=false}) => 
   </div>;
 };
 
-const TwoColLayout = ({children,screenshot,onScreenshot,onDelete,label}) => {
+// ─── IMPORT COMPONENT ───────────────────────────────────────────
+const JSONImport = ({ onImport }) => {
+  const [json, setJson] = useState("");
+  const [err, setErr] = useState("");
+  const handleImport = () => {
+    try {
+      const parsed = JSON.parse(json);
+      if (!parsed.name) throw new Error("JSON must include at least a 'name' field.");
+      onImport(parsed);
+      setJson("");
+      setErr("");
+    } catch (e) {
+      setErr("Invalid JSON format. Please check your data.");
+    }
+  };
+
+  return (
+    <div style={cardSt}>
+      <SL>Import Firm Data</SL>
+      <p style={{...s(), fontSize: 13, color: M, marginBottom: 15}}>
+        Paste the JSON block provided by your researcher here to instantly populate a firm's audit.
+      </p>
+      <textarea 
+        value={json} 
+        onChange={e => setJson(e.target.value)} 
+        placeholder='{ "name": "Firm Name", ... }' 
+        style={{...txSt, minHeight: 250, fontFamily: "monospace"}} 
+      />
+      {err && <div style={{color: "#a4433a", fontSize: 12, marginTop: 10}}>{err}</div>}
+      <button 
+        onClick={handleImport} 
+        style={{marginTop: 15, padding: "12px 24px", background: A, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600}}
+      >
+        Import Data
+      </button>
+    </div>
+  );
+};
+
+// ─── MAIN APP ────────────────────────────────────────────────────────
+export default function App() {
+  const [firms, setFirms] = useState({});
+  const [order, setOrder] = useState([]);
+  const [sel, setSel] = useState(null);
+  const [view, setView] = useState("audit"); 
+  const [loaded, setLoaded] = useState(false);
+  const [images, setImages] = useState({}); 
+  const [newName, setNewName] = useState("");
+  const [previewImg, setPreviewImg] = useState(null);
+  _setPreview = setPreviewImg;
+
+  useEffect(() => {
+    const d = sGet(SK) || {};
+    const o = sGet(SO) || [];
+    setFirms(d);
+    setOrder(o);
+    const imgs = {};
+    o.forEach(id => {
+      imgs[id] = {};
+      IMG_SLOTS.forEach(slot => {
+        const img = imgGet(id, slot);
+        if (img) imgs[id][slot] = img;
+      });
+    });
+    setImages(imgs);
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => { if (loaded) sSet(SK, firms); }, [firms, loaded]);
+  useEffect(() => { if (loaded) sSet(SO, order); }, [order, loaded]);
+
+  const updateFirm = useCallback((key, value) => {
+    if (!sel) return;
+    setFirms(p => ({ ...p, [sel]: { ...p[sel], [key]: value, lastReviewed: new Date().toISOString().split("T")[0] } }));
+  }, [sel]);
+
+  const updateImage = useCallback((slot, data) => {
+    if (!sel) return;
+    imgSet(sel, slot, data);
+    setImages(p => ({ ...p, [sel]: { ...(p[sel] || {}), [slot]: data } }));
+  }, [sel]);
+
+  const addFirm = () => {
+    if (!newName.trim()) return;
+    const id = Date.now().toString();
+    const firm = { id, name: newName.trim(), status: "Not Started", lastReviewed: new Date().toISOString().split("T")[0] };
+    setFirms(p => ({ ...p, [id]: firm }));
+    setOrder(p => [...p, id]);
+    setSel(id);
+    setNewName("");
+  };
+
+  const importFirm = (data) => {
+    const id = Date.now().toString();
+    const newFirm = { ...data, id, lastReviewed: new Date().toISOString().split("T")[0] };
+    setFirms(p => ({ ...p, [id]: newFirm }));
+    setOrder(p => [...p, id]);
+    setSel(id);
+    setView("audit");
+  };
+
+  const exportFirm = () => {
+    const data = JSON.stringify(firms[sel], null, 2);
+    navigator.clipboard.writeText(data);
+    alert("JSON Copied to clipboard!");
+  };
+
+  const deleteFirm = (id) => {
+    if (!confirm(`Delete ${firms[id]?.name}?`)) return;
+    setFirms(p => { const n = { ...p }; delete n[id]; return n; });
+    setOrder(p => p.filter(x => x !== id));
+    setImages(p => { const n = { ...p }; delete n[id]; return n; });
+    setSel(null);
+  };
+
+  if (!loaded) return <div style={{...s(), background:BG, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center"}}>Loading...</div>;
+
+  const cur = sel ? firms[sel] : null;
+
+  return (
+    <div style={{...s(), background: BG, minHeight: "100vh", color: D}}>
+      {/* HEADER */}
+      <div style={{background: "#2c2c2c", padding: "32px", color: "#f5f2ed"}}>
+        <div style={{maxWidth: 1100, margin: "0 auto"}}>
+          <div style={{...m(), fontSize: 11, textTransform: "uppercase", letterSpacing: 2.5, color: AW, marginBottom: 8}}>MKM Design Group</div>
+          <h1 style={{...s(), fontSize: 32, fontWeight: 700, margin: 0}}>Website X-Ray Vision</h1>
+          <div style={{display: "flex", gap: 0, marginTop: 24}}>
+            <button onClick={() => setView("audit")} style={{padding: "10px 24px", ...s(), fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer", borderBottom: view === "audit" ? `2px solid ${AW}` : "2px solid transparent", background: "transparent", color: view === "audit" ? "#f5f2ed" : "#7a756d"}}>Audits</button>
+            <button onClick={() => setView("import")} style={{padding: "10px 24px", ...s(), fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer", borderBottom: view === "import" ? `2px solid ${AW}` : "2px solid transparent", background: "transparent", color: view === "import" ? "#f5f2ed" : "#7a756d"}}>Import JSON</button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{maxWidth: 1100, margin: "0 auto", padding: "24px 32px"}}>
+        {view === "import" ? (
+          <JSONImport onImport={importFirm} />
+        ) : sel ? (
+          <div>
+            <div style={{display: "flex", justifyContent: "space-between", marginBottom: 20}}>
+              <button onClick={() => setSel(null)} style={{...s(), fontSize: 13, color: A, background: "none", border: "none", cursor: "pointer", fontWeight: 600}}>← Back to List</button>
+              <div style={{display: "flex", gap: 10}}>
+                <button onClick={exportFirm} style={{padding: "6px 14px", background: "transparent", border: `1px solid ${BD}`, borderRadius: 6, fontSize: 12, cursor: "pointer"}}>Export JSON</button>
+                <button onClick={() => deleteFirm(sel)} style={{padding: "6px 14px", background: "#f8d7da", border: "none", borderRadius: 6, fontSize: 12, color: "#721c24", cursor: "pointer"}}>Delete Firm</button>
+              </div>
+            </div>
+            
+            <div style={cardSt}>
+              <h2>{cur.name}</h2>
+              <ImageSlot image={images[sel]?.logo} onUpload={img => updateImage("logo", img)} onDelete={() => updateImage("logo", null)} label="Logo" height={100} contain />
+              <FL>Website URL</FL>
+              <input value={cur.url || ""} onChange={e => updateFirm("url", e.target.value)} style={inputSt} />
+            </div>
+            
+            {/* Audit Content Sections Go Here */}
+            <div style={cardSt}>
+               <SL>Audit In Progress</SL>
+               <p style={{fontSize: 13, color: M}}>Use the sidebar and tabs in the researcher-integrated version for full details, or add fields here.</p>
+            </div>
+          </div>
+        ) : (
+          <div style={cardSt}>
+            <SL>Current Firm Audits</SL>
+            <div style={{display: "flex", gap: 10, marginBottom: 20}}>
+              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="New Firm Name" style={inputSt} />
+              <button onClick={addFirm} style={{padding: "0 20px", background: A, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600}}>Add</button>
+            </div>
+            {order.length > 0 ? order.map(id => (
+              <div key={id} onClick={() => setSel(id)} style={{padding: 15, borderBottom: `1px solid ${BD}`, cursor: "pointer", display: "flex", justifyContent: "space-between", background: C}}>
+                <span style={{fontWeight: 600}}>{firms[id].name}</span>
+                <span style={{color: M, fontSize: 12}}>{firms[id].status}</span>
+              </div>
+            )) : <p style={{color: M, fontSize: 13}}>No firms added yet. Start by adding one above or importing JSON.</p>}
+          </div>
+        )}
+      </div>
+
+      {/* Lightbox */}
+      {previewImg && <div onClick={() => setPreviewImg(null)} style={{position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer"}}>
+        <img src={previewImg} style={{maxWidth: "90%", maxHeight: "90%", borderRadius: 8}} />
+      </div>}
+    </div>
+  );
+}const TwoColLayout = ({children,screenshot,onScreenshot,onDelete,label}) => {
   const ref = useRef(null);
   const handle = (e) => { const f=e.target.files?.[0]; if(!f)return; const r=new FileReader(); r.onload=(ev)=>onScreenshot(ev.target.result); r.readAsDataURL(f); };
   return <div style={{display:"flex",gap:24,alignItems:"flex-start"}}>
